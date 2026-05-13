@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mess Food Management</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+:root {
+  --primary: #059669; /* Emerald 600 */
+  --primary-hover: #047857; /* Emerald 700 */
+  --danger: #ef4444; /* Red 500 */
+  --danger-hover: #dc2626; /* Red 600 */
+  --bg: #f8fafc; /* Slate 50 */
+  --text: #0f172a; /* Slate 900 */
+  --text-muted: #64748b; /* Slate 500 */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg);
+  background-image: url('assets/hero_thali.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  margin: 0;
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Dark Overlay for body */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: -1;
+}
+
+/* HEADER */
+header {
+  background: rgba(5, 150, 105, 0.9);
+  backdrop-filter: blur(10px);
+  color: white;
+  padding: 24px;
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  border-bottom: 1px solid var(--glass-border);
+  letter-spacing: 1px;
+}
+
+/* SECTIONS */
+section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 40px;
+  margin: 40px auto;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  max-width: 800px;
+  border: 1px solid var(--glass-border);
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+section h2 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  color: var(--text);
+  font-size: 28px;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* Inner Cards */
+.inner-card {
+  background: rgba(255, 255, 255, 0.7);
+  padding: 24px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(8px);
+}
+
+.inner-card h3 {
+  margin-top: 0;
+  color: var(--text);
+  font-weight: 600;
+  border-bottom: 2px solid rgba(5, 150, 105, 0.2);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  font-size: 20px;
+}
+
+/* INPUTS */
+label {
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 15px;
+}
+
+select, input[type="text"], input[type="number"], input[type="password"] {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  width: 100%;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.95);
+  font-family: inherit;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  color: var(--text);
+}
+
+input:focus, select:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.15);
+  background: #ffffff;
+}
+
+/* BUTTON */
+button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  width: 100%;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.3);
+  letter-spacing: 0.5px;
+}
+
+button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.4);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* CARDS */
+.dish-card, .slot-card {
+  background: white;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 6px solid var(--primary);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  animation: fadeInRight 0.5s ease backwards;
+}
+
+.meal-section-title {
+  font-size: 18px;
+  color: var(--primary);
+  font-weight: 700;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  text-transform: capitalize;
+  border-bottom: 2px dashed #cbd5e1;
+  padding-bottom: 8px;
+}
+
+/* Staggered animation delays */
+.dish-card:nth-child(2), .slot-card:nth-child(2) { animation-delay: 0.1s; }
+.dish-card:nth-child(3), .slot-card:nth-child(3) { animation-delay: 0.2s; }
+.dish-card:nth-child(4), .slot-card:nth-child(4) { animation-delay: 0.3s; }
+.dish-card:nth-child(5), .slot-card:nth-child(5) { animation-delay: 0.4s; }
+
+.dish-card:hover, .slot-card:hover {
+  transform: translateX(8px) scale(1.01);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+  border-left-width: 8px;
+}
+
+.dish-actions button {
+  background: #3b82f6; /* Blue 500 */
+  margin-left: 8px;
+  padding: 8px 16px;
+  width: auto;
+  box-shadow: none;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.dish-actions button:hover {
+  background: #2563eb; /* Blue 600 */
+}
+
+button[style*="f44336"] {
+  background: var(--danger) !important;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3) !important;
+}
+
+button[style*="f44336"]:hover {
+  background: var(--danger-hover) !important;
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.4) !important;
+}
+
+.section-title {
+  color: var(--text);
+  margin-top: 32px;
+  margin-bottom: 16px;
+  font-weight: 700;
+  font-size: 22px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+}
+
+.hidden { display: none !important; }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Flex layout for role buttons */
+.role-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+.role-buttons button {
+  width: 200px;
+  padding: 16px 24px;
+  font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<header>🍽️ Mess Food Management</header>
+
+<section id="role-selection">
+  <h2>Welcome</h2>
+  <p style="text-align: center; color: var(--text-muted); margin-bottom: 32px; font-size: 16px;">Please select your role to continue</p>
+  <div class="role-buttons">
+    <button onclick="showAdmin()">👨‍🍳 Admin</button>
+    <button onclick="showStudentLogin()">🎓 Student</button>
+  </div>
+</section>
+
+<section id="student-login-section" class="hidden">
+  <h2>Student Login</h2>
+  <div class="inner-card">
+    <label>Enter your Email ID:</label>
+    <input type="email" id="student-email-input" placeholder="student@example.com">
+    <button onclick="studentLogin()">Login</button>
+    <button onclick="showRoleSelection()" style="background: transparent; color: var(--text-muted); box-shadow: none; margin-top: 8px;">Cancel</button>
+  </div>
+</section>
+
+<section id="admin-mess-select-section" class="hidden">
+  <h2>Select Your Mess</h2>
+  <div class="inner-card">
+    <label>Choose a mess to manage:</label>
+    <select id="admin-mess"></select>
+    <button onclick="goToAdminAuth()">Continue to Login</button>
+    <button onclick="showRoleSelection()" style="background: transparent; color: var(--text-muted); box-shadow: none; margin-top: 8px;">Cancel</button>
+  </div>
+</section>
+
+<section id="admin-auth-section" class="hidden">
+  <h2>Admin Access</h2>
+  <div class="inner-card" style="text-align: center;">
+    <h3 id="auth-mess-name" style="color: var(--primary);"></h3>
+    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">Sign in with the registered owner Gmail ID for this mess.</p>
+    <button onclick="signInWithGoogle()" style="width: auto; display: flex; align-items: center; justify-content: center; margin: 0 auto; gap: 12px; background: white; color: var(--text); border: 1px solid #e2e8f0;">
+      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+      Sign in with Google
+    </button>
+    <button onclick="showAdmin()" style="background: transparent; color: var(--text-muted); box-shadow: none; margin-top: 16px;">Back to Selection</button>
+  </div>
+</section>
+
+<section id="admin-dashboard" class="hidden">
+  <h2>👨‍🍳 Admin Dashboard</h2>
+
+  <div class="inner-card">
+    <h3>Manage Menu</h3>
+    <div class="grid-2">
+      <div>
+        <label>Meal Type:</label>
+        <select id="admin-meal">
+          <option value="breakfast">🍳 Breakfast</option>
+          <option value="lunch">🍛 Lunch</option>
+          <option value="dinner">🍽️ Dinner</option>
+        </select>
+      </div>
+      <div>
+        <label>Dish Details:</label>
+        <div style="display: flex; gap: 12px;">
+          <input type="text" id="dish-name" placeholder="Dish Name" style="flex: 2; margin-bottom: 0;">
+          <input type="number" id="dish-price" placeholder="₹ Price" style="flex: 1; margin-bottom: 0;">
+        </div>
+      </div>
+    </div>
+    <button onclick="addOrUpdateDish()" style="margin-top: 24px;">Add / Update Dish</button>
+  </div>
+
+  <div class="section-title">Current Menu</div>
+  <div id="admin-dish-list"></div>
+
+  <div class="section-title">Booking Counts</div>
+  <div id="admin-booking-counts"></div>
+
+  <button onclick="resetBookings()" style="background:#f44336; margin-top: 32px;">Reset Bookings for This Mess</button>
+  <button onclick="adminSignOut()" style="background: transparent; color: var(--text-muted); box-shadow: none; margin-top: 8px;">Logout</button>
+</section>
+
+<section id="student-dashboard" class="hidden">
+  <h2>🎓 Student Dashboard</h2>
+
+  <!-- My Bookings Section -->
+  <div class="inner-card">
+    <h3>My Active Bookings</h3>
+    <div id="my-bookings-list"></div>
+  </div>
+
+  <div class="inner-card">
+    <h3>Select Mess</h3>
+    <label>Choose a mess to view its menu and slots:</label>
+    <select id="student-mess"></select>
+    <button onclick="viewTodayMenu()" style="margin-top: 16px; display: none;">View Today’s Menu & Slots</button>
+  </div>
+
+  <div class="section-title">Today's Menu</div>
+  <div id="student-dish-list">
+    <div style="text-align:center; color:var(--text-muted); padding: 20px;">Loading...</div>
+  </div>
+
+  <div class="section-title">Seat Booking</div>
+
+  <div class="inner-card">
+    <label>Would you like to book a seat?</label>
+    <select id="book-choice">
+      <option value="no">No</option>
+      <option value="yes">Yes</option>
+    </select>
+
+    <div id="booking-options" class="hidden" style="margin-top: 20px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 20px;">
+      <div class="grid-2">
+        <div>
+          <label>Meal Type:</label>
+          <select id="student-meal">
+            <option value="breakfast">🍳 Breakfast</option>
+            <option value="lunch">🍛 Lunch</option>
+            <option value="dinner">🍽️ Dinner</option>
+          </select>
+        </div>
+        <div>
+          <label>Timing Slot:</label>
+          <select id="student-slot"></select>
+        </div>
+      </div>
+      <button onclick="confirmBooking()" style="margin-top: 24px;">Confirm Booking</button>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top: 32px;">Available Slots</div>
+  <div id="student-slot-counts"></div>
+  
+  <button onclick="showRoleSelection()" style="background: transparent; color: var(--text-muted); box-shadow: none; margin-top: 32px;">Back to Home</button>
+  <button onclick="studentLogout()" style="background: #f44336; margin-top: 8px;">Logout</button>
+</section>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDi3Grzd1LcwcfkrTQg4mt4elIXjD_lepE",
+  authDomain: "mess-food-management-a8c9d.firebaseapp.com",
+  databaseURL: "https://mess-food-management-a8c9d-default-rtdb.firebaseio.com",
+  projectId: "mess-food-management-a8c9d",
+  storageBucket: "mess-food-management-a8c9d.appspot.com",
+  messagingSenderId: "791444604708",
+  appId: "1:791444604708:web:ee7b0d0e3fdb6fb76555b1"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Map each mess to an array of owner email addresses.
+const messEmails = {
+  "Gokul Mess": ["s06harsh@gmail.com"],
+  "Nyanwardini Mess": ["pornimaw875@gmail.com", "s06harsh@gmail.com"],
+  "Mom's Kitchen": ["ns1912021@gmail.com", "s06harsh@gmail.com"],
+  "Siddeshwar Bhojanalay": ["kmayuri807@gmail.com", "s06harsh@gmail.com"],
+  "Annapurna Dinning": ["sanskrutibangar2007@gmail.com", "s06harsh@gmail.com"],
+  "Hotel Trisha": ["202501040002@mitaoe.ac.in", "s06harsh@gmail.com"],
+  "Vanakkam Mess": ["202501040003@mitaoe.ac.in", "s06harsh@gmail.com"],
+  "Shri Vigneshwar Bhojanalay": ["202501040004@mitaoe.ac.in", "s06harsh@gmail.com"],
+  "Bhagya Laxmi Mess": ["202501040010@mitaoe.ac.in", "s06harsh@gmail.com"],
+  "Elite Space Canteen": ["202501040011@mitaoe.ac.in", "s06harsh@gmail.com"]
+};
+
+const messes = Object.keys(messEmails);
+
+const slotsTemplate = {
+  breakfast: { "8-9 am":0, "9-10 am":0 },
+  lunch: { "12-1 pm":0, "1-2 pm":0, "2-3 pm":0 },
+  dinner: { "7-8 pm":0, "8-9 pm":0, "9-10 pm":0 }
+};
+
+const totalSeats = 40;
+
+const adminMessSelect = document.getElementById('admin-mess');
+const studentMessSelect = document.getElementById('student-mess');
+
+messes.forEach(m => {
+  let o1=document.createElement('option'); o1.value=m; o1.text=m; adminMessSelect.add(o1);
+  let o2=document.createElement('option'); o2.value=m; o2.text=m; studentMessSelect.add(o2);
+});
+
+let selectedAdminMess=null;
+let editingDishIndex=null;
+let currentUser=null;
+let currentRole=null; // 'admin' or 'student'
+
+// Track active listeners to prevent overlap across messes
+let currentStudentSlotListenerRef = null;
+let currentAdminSlotListenerRef = null;
+let currentAdminMenuListenerRef = null;
+let myBookingsListenerRef = null;
+
+// Initialize studentId based on their email
+let currentStudentEmail = localStorage.getItem('studentEmail');
+let studentId = currentStudentEmail ? currentStudentEmail.replace(/[.#$\[\]]/g, '_') : null;
+
+// Firebase Authentication State Listener (Only used for Admin now)
+firebase.auth().onAuthStateChanged((user) => {
+  currentUser = user;
+  if (user && currentRole === 'admin' && selectedAdminMess) {
+    verifyAdminEmail(user);
+  }
+});
+
+function signInWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(error => {
+    alert("Sign in failed: " + error.message);
+  });
+}
+
+function adminSignOut() {
+  firebase.auth().signOut().then(() => {
+    selectedAdminMess = null;
+    showRoleSelection();
+  });
+}
+
+function verifyAdminEmail(user) {
+  const expectedEmails = messEmails[selectedAdminMess];
+  
+  if (expectedEmails && expectedEmails.includes(user.email)) {
+    hideAll();
+    document.getElementById('admin-dashboard').classList.remove('hidden');
+    loadAdminMenu(); 
+    loadAdminBookingCounts();
+  } else {
+    alert("This email is not registered as an owner for " + selectedAdminMess + ".");
+    firebase.auth().signOut();
+    document.getElementById('admin-auth-section').classList.remove('hidden');
+  }
+}
+
+function showRoleSelection() {
+  hideAll();
+  currentRole = null;
+  document.getElementById('role-selection').classList.remove('hidden');
+}
+
+function showAdmin(){ 
+  hideAll(); 
+  currentRole = 'admin';
+  document.getElementById('admin-mess-select-section').classList.remove('hidden'); 
+}
+
+function goToAdminAuth() {
+  selectedAdminMess = document.getElementById('admin-mess').value;
+  hideAll();
+  document.getElementById('auth-mess-name').innerText = selectedAdminMess + " Dashboard";
+  document.getElementById('admin-auth-section').classList.remove('hidden');
+  
+  // If they are already signed in from a previous session, check their email immediately
+  if (currentUser) {
+     verifyAdminEmail(currentUser);
+  }
+}
+
+function showStudentLogin() {
+  if (currentStudentEmail) {
+    showStudent();
+  } else {
+    hideAll();
+    currentRole = 'student';
+    document.getElementById('student-login-section').classList.remove('hidden');
+  }
+}
+
+function studentLogin() {
+  const emailInput = document.getElementById('student-email-input').value.trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+  if (!emailRegex.test(emailInput)) {
+    alert("Please enter a valid email address.");
+    return;
+  }
+  
+  currentStudentEmail = emailInput;
+  studentId = currentStudentEmail.replace(/[.#$\[\]]/g, '_');
+  localStorage.setItem('studentEmail', currentStudentEmail);
+  showStudent();
+}
+
+function studentLogout() {
+  currentStudentEmail = null;
+  studentId = null;
+  localStorage.removeItem('studentEmail');
+  document.getElementById('student-email-input').value = '';
+  showRoleSelection();
+}
+
+function showStudent(){ 
+  hideAll(); 
+  currentRole = 'student';
+  document.getElementById('student-dashboard').classList.remove('hidden'); 
+  viewTodayMenu();
+  loadMyBookings();
+}
+
+function initSlots(mess,date){
+  const ref=db.ref('messes/'+mess+'/bookings/'+date);
+  ref.once('value',snap=>{
+    if(!snap.exists()){
+      let def={};
+      for(const meal in slotsTemplate){
+        def[meal]={};
+        for(const s in slotsTemplate[meal]) def[meal][s]=0;
+      }
+      ref.set(def);
+    }
+  });
+}
+
+function addOrUpdateDish(){
+  const name=document.getElementById('dish-name').value;
+  const price=document.getElementById('dish-price').value;
+  if(!name||!price){ alert('Enter dish and price'); return; }
+  const meal=document.getElementById('admin-meal').value;
+  const date=new Date().toISOString().slice(0,10);
+  const ref=db.ref('messes/'+selectedAdminMess+'/dailyMenu/'+date+'/'+meal);
+  ref.once('value',snap=>{
+    let dishes=snap.val()||[];
+    if(editingDishIndex!==null){ dishes[editingDishIndex]={name,price}; editingDishIndex=null; }
+    else dishes.push({name,price});
+    ref.set(dishes);
+    document.getElementById('dish-name').value='';
+    document.getElementById('dish-price').value='';
+  });
+}
+
+function renderAdminDishes(dishes){
+  const c=document.getElementById('admin-dish-list');
+  c.innerHTML='';
+  if (dishes.length === 0) {
+    c.innerHTML='<div style="text-align:center; color:var(--text-muted); padding: 10px;">No dishes added yet.</div>';
+    return;
+  }
+  dishes.forEach((d,i)=>{
+    let div=document.createElement('div');
+    div.className='dish-card';
+    div.innerHTML=`<span style="font-weight: 500; font-size: 16px;">${d.name} - <span style="color: var(--primary); font-weight: 600;">₹${d.price}</span></span>
+    <span class="dish-actions">
+    <button onclick="editDish(${i})">Edit</button>
+    <button onclick="deleteDish(${i})">Delete</button></span>`;
+    c.appendChild(div);
+  });
+}
+
+function editDish(i){
+  const meal=document.getElementById('admin-meal').value;
+  const date=new Date().toISOString().slice(0,10);
+  db.ref('messes/'+selectedAdminMess+'/dailyMenu/'+date+'/'+meal).once('value',snap=>{
+    let d=snap.val()||[];
+    if(d[i]){
+      document.getElementById('dish-name').value=d[i].name;
+      document.getElementById('dish-price').value=d[i].price;
+      editingDishIndex=i;
+    }
+  });
+}
+
+function deleteDish(i){
+  const meal=document.getElementById('admin-meal').value;
+  const date=new Date().toISOString().slice(0,10);
+  db.ref('messes/'+selectedAdminMess+'/dailyMenu/'+date+'/'+meal).once('value',snap=>{
+    let d=snap.val()||[];
+    d.splice(i,1);
+    db.ref('messes/'+selectedAdminMess+'/dailyMenu/'+date+'/'+meal).set(d);
+  });
+}
+
+function loadAdminMenu(){
+  const meal=document.getElementById('admin-meal').value;
+  const date=new Date().toISOString().slice(0,10);
+  initSlots(selectedAdminMess,date);
+  
+  if (currentAdminMenuListenerRef) {
+    db.ref(currentAdminMenuListenerRef).off();
+  }
+  currentAdminMenuListenerRef = 'messes/'+selectedAdminMess+'/dailyMenu/'+date+'/'+meal;
+  
+  db.ref(currentAdminMenuListenerRef).on('value',snap=>{
+    renderAdminDishes(snap.val()||[]);
+  });
+}
+
+document.getElementById('admin-meal').addEventListener('change', loadAdminMenu);
+
+function loadAdminBookingCounts(){
+  const c=document.getElementById('admin-booking-counts');
+  const date=new Date().toISOString().slice(0,10);
+  
+  if (currentAdminSlotListenerRef) {
+    db.ref(currentAdminSlotListenerRef).off();
+  }
+  currentAdminSlotListenerRef = 'messes/'+selectedAdminMess+'/bookings/'+date;
+  
+  db.ref(currentAdminSlotListenerRef).on('value',snap=>{
+    let slots=snap.val()||slotsTemplate;
+    let html=`<div style="margin-bottom:12px; font-weight:600; font-size:18px; color: var(--primary);">${selectedAdminMess}</div>`;
+    for(const meal in slots){
+      for(const s in slots[meal]){
+        let booked = slots[meal][s];
+        let percent = Math.min((booked / totalSeats) * 100, 100);
+        html+=`<div class="slot-card" style="display:block;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <span style="font-weight:600; text-transform:capitalize;">${meal} (${s})</span>
+              <span style="font-weight:600; color:var(--text-muted);">${booked} / ${totalSeats} Booked</span>
+            </div>
+            <div style="width:100%; background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden;">
+              <div style="width:${percent}%; height:100%; background: ${percent >= 100 ? 'var(--danger)' : 'var(--primary)'}; transition: width 0.5s ease;"></div>
+            </div>
+          </div>`;
+      }
+    }
+    c.innerHTML=html;
+  });
+}
+
+function resetBookings(){
+  const date=new Date().toISOString().slice(0,10);
+  let def={};
+  for(const meal in slotsTemplate){
+    def[meal]={};
+    for(const s in slotsTemplate[meal]) def[meal][s]=0;
+  }
+  db.ref('messes/'+selectedAdminMess+'/bookings/'+date).set(def);
+  alert("Reset done");
+}
+
+async function viewTodayMenu(){
+  const mess=studentMessSelect.value;
+  const date=new Date().toISOString().slice(0,10);
+  initSlots(mess,date);
+  const c=document.getElementById('student-dish-list');
+  c.innerHTML='<div style="text-align:center; color:var(--text-muted); padding: 20px;">Loading menu...</div>';
+  
+  let html = '';
+  const meals = ['breakfast', 'lunch', 'dinner'];
+  const emojis = {'breakfast':'🍳 Breakfast', 'lunch':'🍛 Lunch', 'dinner':'🍽️ Dinner'};
+  
+  for(let meal of meals) {
+    const snap = await db.ref('messes/'+mess+'/dailyMenu/'+date+'/'+meal).once('value');
+    if(snap.exists() && snap.val().length > 0){
+      html += `<div class="meal-section-title">${emojis[meal]}</div>`;
+      snap.val().forEach(d=>{
+        html += `<div class="dish-card">
+                   <span style="font-weight: 500; font-size: 16px;">${d.name}</span>
+                   <span style="color: var(--primary); font-weight: 600;">₹${d.price}</span>
+                 </div>`;
+      });
+    }
+  }
+  if (!html) {
+    html = '<div style="text-align:center; color:var(--text-muted); padding: 20px;">No menu available for today.</div>';
+  }
+  c.innerHTML = html;
+  
+  loadStudentSlotCounts();
+}
+
+// Automatically update the view when a new mess is selected
+document.getElementById('student-mess').addEventListener('change', viewTodayMenu);
+
+document.getElementById('book-choice').addEventListener('change',function(){
+  document.getElementById('booking-options').classList.toggle('hidden',this.value!=='yes');
+  updateSlotOptions();
+});
+
+function updateSlotOptions(){
+  const meal=document.getElementById('student-meal').value;
+  const slotSelect=document.getElementById('student-slot');
+  slotSelect.innerHTML='';
+  const mess=studentMessSelect.value;
+  const date=new Date().toISOString().slice(0,10);
+  db.ref(`messes/${mess}/bookings/${date}/${meal}`).once('value',snap=>{
+    let slots=snap.val()||slotsTemplate[meal];
+    for(const s in slots){
+      let opt=document.createElement('option');
+      opt.value=s;
+      opt.text=`${s} (${slots[s]}/${totalSeats})`;
+      if(slots[s]>=totalSeats) opt.disabled=true;
+      slotSelect.add(opt);
+    }
+  });
+}
+
+document.getElementById('student-meal').addEventListener('change',updateSlotOptions);
+
+function loadStudentSlotCounts(){
+  const c=document.getElementById('student-slot-counts');
+  const mess=studentMessSelect.value;
+  const date=new Date().toISOString().slice(0,10);
+  
+  if (currentStudentSlotListenerRef) {
+    db.ref(currentStudentSlotListenerRef).off();
+  }
+  currentStudentSlotListenerRef = 'messes/'+mess+'/bookings/'+date;
+  
+  db.ref(currentStudentSlotListenerRef).on('value',snap=>{
+    let slots=snap.val()||slotsTemplate;
+    let html=`<div style="margin-bottom:12px; font-weight:600; font-size:18px; color: var(--primary);">${mess}</div>`;
+    for(const meal in slots){
+      for(const s in slots[meal]){
+        let booked = slots[meal][s];
+        let percent = Math.min((booked / totalSeats) * 100, 100);
+        html+=`<div class="slot-card" style="display:block;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <span style="font-weight:600; text-transform:capitalize;">${meal} (${s})</span>
+              <span style="font-weight:600; color:var(--text-muted);">${booked} / ${totalSeats} Booked</span>
+            </div>
+            <div style="width:100%; background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden;">
+              <div style="width:${percent}%; height:100%; background: ${percent >= 100 ? 'var(--danger)' : 'var(--primary)'}; transition: width 0.5s ease;"></div>
+            </div>
+          </div>`;
+      }
+    }
+    c.innerHTML=html;
+    updateSlotOptions();
+  });
+}
+
+function loadMyBookings() {
+  const c = document.getElementById('my-bookings-list');
+  
+  if (myBookingsListenerRef) {
+    db.ref(myBookingsListenerRef).off();
+  }
+  myBookingsListenerRef = `users/${studentId}/bookings`;
+  
+  db.ref(myBookingsListenerRef).on('value', snap => {
+    c.innerHTML = '';
+    const bookings = snap.val();
+    if(!bookings) {
+      c.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 10px;">No active bookings.</div>';
+      return;
+    }
+    
+    for(const key in bookings) {
+      const b = bookings[key];
+      let div = document.createElement('div');
+      div.className = 'dish-card';
+      div.innerHTML = `
+        <div style="flex: 1;">
+          <div style="font-weight: 600; font-size: 16px;">${b.mess}</div>
+          <div style="font-size: 14px; color: var(--primary); font-weight: 500; text-transform: capitalize;">${b.date} | ${b.meal} | ${b.slot}</div>
+        </div>
+        <button data-key="${key}" data-mess="${b.mess.replace(/"/g, '&quot;')}" data-date="${b.date}" data-meal="${b.meal}" data-slot="${b.slot}" onclick="cancelBooking(this.dataset.key, this.dataset.mess, this.dataset.date, this.dataset.meal, this.dataset.slot)" style="background: var(--danger); width: auto; font-size: 14px; padding: 8px 16px; border-radius: 8px; margin: 0;">Cancel</button>
+      `;
+      c.appendChild(div);
+    }
+  });
+}
+
+function confirmBooking(){
+  const mess=studentMessSelect.value;
+  const meal=document.getElementById('student-meal').value;
+  const slot=document.getElementById('student-slot').value;
+  const date=new Date().toISOString().slice(0,10);
+  
+  // Check if user already booked this meal today
+  db.ref(`users/${studentId}/bookings`).once('value', snap => {
+    const bookings = snap.val();
+    if (bookings) {
+      for(const key in bookings) {
+        if(bookings[key].date === date && bookings[key].meal === meal) {
+          alert(`You have already booked a slot for ${meal} today at ${bookings[key].mess}!`);
+          return;
+        }
+      }
+    }
+    
+    // If not booked, proceed
+    const refCount = db.ref(`messes/${mess}/bookings/${date}/${meal}/${slot}`);
+    refCount.once('value', snap2 => {
+      let b = snap2.val() || 0;
+      if(b >= totalSeats){ alert('Slot is Full'); return; }
+      
+      const bookingId = db.ref().push().key;
+      let updates = {};
+      updates[`messes/${mess}/bookings/${date}/${meal}/${slot}`] = b + 1;
+      updates[`users/${studentId}/bookings/${bookingId}`] = {
+        mess: mess,
+        date: date,
+        meal: meal,
+        slot: slot
+      };
+      
+      db.ref().update(updates).then(() => {
+        alert('Booking Confirmed for ' + meal + ' at ' + slot);
+        document.getElementById('book-choice').value = 'no';
+        document.getElementById('booking-options').classList.add('hidden');
+        sendBookingConfirmationEmail(currentStudentEmail, mess, date, meal, slot);
+      });
+    });
+  });
+}
+
+function cancelBooking(bookingId, mess, date, meal, slot) {
+  if(!confirm(`Are you sure you want to cancel your ${meal} slot at ${mess}?`)) return;
+  
+  const refCount = db.ref(`messes/${mess}/bookings/${date}/${meal}/${slot}`);
+  
+  refCount.once('value', snap => {
+    let b = snap.val() || 0;
+    let newCount = b > 0 ? b - 1 : 0;
+    
+    let updates = {};
+    updates[`messes/${mess}/bookings/${date}/${meal}/${slot}`] = newCount;
+    updates[`users/${studentId}/bookings/${bookingId}`] = null;
+    
+    db.ref().update(updates).then(() => {
+      alert("Booking cancelled successfully.");
+      sendCancellationEmail(mess, date, meal, slot);
+    }).catch(err => {
+      alert("Error cancelling booking.");
+    });
+  });
+}
+
+function sendCancellationEmail(mess, date, meal, slot) {
+  const ownerEmails = messEmails[mess];
+  if(!ownerEmails || ownerEmails.length === 0) return;
+  
+  ownerEmails.forEach(email => {
+    fetch(`https://formsubmit.co/ajax/${email}`, {
+      method: "POST",
+      headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+          _subject: `Slot Cancellation Notification - ${mess}`,
+          message: `A booking has been cancelled by a student.\n\nDate: ${date}\nMeal: ${meal}\nSlot: ${slot}\n\nPlease update your preparation accordingly.`
+      })
+    }).then(r => r.json()).then(data => {
+      console.log(`Cancellation email sent to ${email} successfully.`);
+    }).catch(e => {
+      console.error(`Error sending cancellation email to ${email}`, e);
+    });
+  });
+}
+
+function sendBookingConfirmationEmail(studentEmail, mess, date, meal, slot) {
+  if(!studentEmail) return;
+  fetch(`https://formsubmit.co/ajax/${studentEmail}`, {
+    method: "POST",
+    headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+        _subject: `Booking Confirmed - ${mess}`,
+        message: `Your meal booking has been confirmed.\n\nMess: ${mess}\nDate: ${date}\nMeal: ${meal}\nSlot: ${slot}\n\nThank you!`
+    })
+  }).then(r => r.json()).then(data => {
+    console.log(`Confirmation email sent to ${studentEmail} successfully.`);
+  }).catch(e => {
+    console.error(`Error sending confirmation email to ${studentEmail}`, e);
+  });
+}
+
+function hideAll(){
+  document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));
+}
+</script>
+
+</body>
+</html>
